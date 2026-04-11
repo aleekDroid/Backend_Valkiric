@@ -9,10 +9,26 @@ export class MailService {
 
   constructor(private config: ConfigService) {
     const port = parseInt(config.get<string>('SMTP_PORT', '587'), 10);
+    const connectionTimeout = parseInt(
+      config.get<string>('SMTP_CONNECTION_TIMEOUT', '15000'),
+      10,
+    );
+    const greetingTimeout = parseInt(
+      config.get<string>('SMTP_GREETING_TIMEOUT', '10000'),
+      10,
+    );
+    const socketTimeout = parseInt(
+      config.get<string>('SMTP_SOCKET_TIMEOUT', '20000'),
+      10,
+    );
+
     this.transporter = nodemailer.createTransport({
       host: config.get<string>('SMTP_HOST'),
       port,
       secure: port === 465,
+      connectionTimeout,
+      greetingTimeout,
+      socketTimeout,
       auth: {
         user: config.get<string>('SMTP_USER'),
         pass: config.get<string>('SMTP_PASS'),
@@ -60,7 +76,9 @@ export class MailService {
       });
       this.logger.log(`2FA code sent to ${email}`);
     } catch (err: any) {
-      this.logger.error(`Failed to send 2FA email to ${email}: ${err.message}`);
+      this.logger.error(
+        `Failed to send 2FA email to ${email}: ${err.message} (${err.code ?? 'NO_CODE'})`,
+      );
       throw new InternalServerErrorException('No se pudo enviar el correo de verificación. Inténtalo más tarde.');
     }
   }
