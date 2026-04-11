@@ -36,7 +36,7 @@ DB_HOST=localhost
 DB_PORT=5432
 DB_USER=postgres
 DB_PASSWORD=postgres
-DB_NAME=valkiric
+DB_NAME=postgres
 
 JWT_SECRET=change-me-in-production
 JWT_EXPIRES_IN=7d
@@ -45,12 +45,16 @@ PORT=3000
 NODE_ENV=development
 FRONTEND_URL=http://localhost:4200
 
-SMTP_HOST=smtp.gmail.com
+SMTP_HOST=smtp-relay.brevo.com
 SMTP_PORT=587
-SMTP_USER=your-email@gmail.com
-SMTP_PASS=your-app-password
-SMTP_FROM=Valkiric <your-email@gmail.com>
+SMTP_USER=your-brevo-smtp-login
+SMTP_PASS=your-brevo-smtp-key
+SMTP_FROM=Valkiric <verified-sender@example.com>
 ```
+
+Para producción, se recomienda usar un proveedor transaccional como Brevo en lugar de Gmail.
+En Brevo obtén las credenciales SMTP desde SMTP and API settings.
+Usa la relay oficial `smtp-relay.brevo.com` con puerto `587` o `465`.
 
 ## Scripts
 
@@ -80,6 +84,9 @@ Configura el repo con root directory en `backend/` y estas variables:
 - `SMTP_USER`
 - `SMTP_PASS`
 - `SMTP_FROM`
+- `SMTP_CONNECTION_TIMEOUT=15000`
+- `SMTP_GREETING_TIMEOUT=10000`
+- `SMTP_SOCKET_TIMEOUT=20000`
 
 La base de datos recomendada es Supabase PostgreSQL.
 

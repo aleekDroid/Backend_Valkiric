@@ -28,7 +28,7 @@ export class MailService implements OnModuleInit {
       10,
     );
 
-    const rawHost = this.config.get<string>('SMTP_HOST', 'smtp.gmail.com');
+    const rawHost = this.config.get<string>('SMTP_HOST', 'smtp-relay.brevo.com');
 
     // Railway is IPv4-only. Pre-resolve the SMTP hostname to an IPv4 address
     // so nodemailer connects directly to an A record, bypassing IPv6.
