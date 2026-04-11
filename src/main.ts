@@ -3,19 +3,39 @@ import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import helmet from 'helmet';
 
+function toOrigin(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) return trimmed;
+
+  try {
+    return new URL(trimmed).origin;
+  } catch {
+    return trimmed.replace(/\/+$/, '');
+  }
+}
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  const corsOrigins = process.env.FRONTEND_URL
-    ? process.env.FRONTEND_URL.split(',').map(origin => origin.trim()).filter(Boolean)
-    : ['http://localhost:4200', 'http://localhost:3001'];
+  const allowedOrigins = new Set(
+    (process.env.FRONTEND_URL
+      ? process.env.FRONTEND_URL.split(',').map(toOrigin).filter(Boolean)
+      : ['http://localhost:4200', 'http://localhost:3001'])
+  );
 
   // Security
   app.use(helmet());
 
   // CORS
   app.enableCors({
-    origin: corsOrigins,
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.has(origin)) {
+        callback(null, true);
+        return;
+      }
+
+      callback(new Error(`Origin not allowed by CORS: ${origin}`), false);
+    },
     credentials: true,
   });
 
