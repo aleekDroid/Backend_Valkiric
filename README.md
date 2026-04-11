@@ -45,16 +45,20 @@ PORT=3000
 NODE_ENV=development
 FRONTEND_URL=http://localhost:4200
 
+BREVO_API_KEY=your-brevo-api-key
+SMTP_FROM=Valkiric <verified-sender@example.com>
+
 SMTP_HOST=smtp-relay.brevo.com
 SMTP_PORT=587
 SMTP_USER=your-brevo-smtp-login
 SMTP_PASS=your-brevo-smtp-key
-SMTP_FROM=Valkiric <verified-sender@example.com>
 ```
 
-Para producción, se recomienda usar un proveedor transaccional como Brevo en lugar de Gmail.
-En Brevo obtén las credenciales SMTP desde SMTP and API settings.
-Usa la relay oficial `smtp-relay.brevo.com` con puerto `587` o `465`.
+Para producción en Railway, se recomienda usar la API HTTPS de Brevo y no SMTP.
+La API usa el puerto 443 y evita los timeouts de salida SMTP vistos en Railway.
+La variable `BREVO_API_KEY` se obtiene en Brevo desde `SMTP & API` > `API Keys`.
+La variable `SMTP_FROM` debe usar un remitente verificado en Brevo.
+Las variables SMTP quedan como fallback opcional para otros entornos.
 
 ## Scripts
 
@@ -79,11 +83,12 @@ Configura el repo con root directory en `backend/` y estas variables:
 - `PORT`
 - `NODE_ENV=production`
 - `FRONTEND_URL`
+- `BREVO_API_KEY`
+- `SMTP_FROM`
 - `SMTP_HOST`
 - `SMTP_PORT`
 - `SMTP_USER`
 - `SMTP_PASS`
-- `SMTP_FROM`
 - `SMTP_CONNECTION_TIMEOUT=15000`
 - `SMTP_GREETING_TIMEOUT=10000`
 - `SMTP_SOCKET_TIMEOUT=20000`
