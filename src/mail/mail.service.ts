@@ -1,42 +1,63 @@
-import { Injectable, Logger, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, Logger, InternalServerErrorException, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
+import * as dns from 'dns';
+import { promisify } from 'util';
+
+const resolve4 = promisify(dns.resolve4);
 
 @Injectable()
-export class MailService {
+export class MailService implements OnModuleInit {
   private readonly logger = new Logger(MailService.name);
   private transporter: nodemailer.Transporter;
 
-  constructor(private config: ConfigService) {
-    const port = parseInt(config.get<string>('SMTP_PORT', '587'), 10);
+  constructor(private config: ConfigService) {}
+
+  async onModuleInit() {
+    const port = parseInt(this.config.get<string>('SMTP_PORT', '587'), 10);
     const connectionTimeout = parseInt(
-      config.get<string>('SMTP_CONNECTION_TIMEOUT', '15000'),
+      this.config.get<string>('SMTP_CONNECTION_TIMEOUT', '15000'),
       10,
     );
     const greetingTimeout = parseInt(
-      config.get<string>('SMTP_GREETING_TIMEOUT', '10000'),
+      this.config.get<string>('SMTP_GREETING_TIMEOUT', '10000'),
       10,
     );
     const socketTimeout = parseInt(
-      config.get<string>('SMTP_SOCKET_TIMEOUT', '20000'),
+      this.config.get<string>('SMTP_SOCKET_TIMEOUT', '20000'),
       10,
     );
 
+    const rawHost = this.config.get<string>('SMTP_HOST', 'smtp.gmail.com');
+
+    // Railway is IPv4-only. Pre-resolve the SMTP hostname to an IPv4 address
+    // so nodemailer connects directly to an A record, bypassing IPv6.
+    let host = rawHost;
+    try {
+      const addresses = await resolve4(rawHost);
+      if (addresses.length > 0) {
+        host = addresses[0];
+        this.logger.log(`SMTP: resolved ${rawHost} → ${host} (IPv4)`);
+      }
+    } catch (err: any) {
+      this.logger.warn(`SMTP: could not resolve ${rawHost} to IPv4, using hostname: ${err.message}`);
+    }
+
     this.transporter = nodemailer.createTransport({
-      host: config.get<string>('SMTP_HOST'),
+      host,
       port,
       secure: port === 465,
       connectionTimeout,
       greetingTimeout,
       socketTimeout,
       auth: {
-        user: config.get<string>('SMTP_USER'),
-        pass: config.get<string>('SMTP_PASS'),
+        user: this.config.get<string>('SMTP_USER'),
+        pass: this.config.get<string>('SMTP_PASS'),
       },
       tls: {
-        // Allows self-signed/intercepted certs (VPN, corporate proxies).
-        // In production the server connects directly — no VPN, no issue.
         rejectUnauthorized: false,
+        // Keep original hostname for TLS SNI so the cert is validated correctly
+        servername: rawHost,
       },
     });
 
