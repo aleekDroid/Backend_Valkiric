@@ -6,12 +6,16 @@ import helmet from 'helmet';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  const corsOrigins = process.env.FRONTEND_URL
+    ? process.env.FRONTEND_URL.split(',').map(origin => origin.trim()).filter(Boolean)
+    : ['http://localhost:4200', 'http://localhost:3001'];
+
   // Security
   app.use(helmet());
 
   // CORS
   app.enableCors({
-    origin: process.env.FRONTEND_URL || ['http://localhost:4200', 'http://localhost:3001'],
+    origin: corsOrigins,
     credentials: true,
   });
 

@@ -18,7 +18,8 @@ import { DashboardModule } from './dashboard/dashboard.module';
       password: process.env.DB_PASSWORD || 'postgres',
       database: process.env.DB_NAME || 'valkiric',
       autoLoadEntities: true,
-      synchronize: process.env.NODE_ENV !== 'production',
+      synchronize:
+        process.env.DB_SYNCHRONIZE === 'true' || process.env.NODE_ENV !== 'production',
       ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
     }),
     AuthModule,
