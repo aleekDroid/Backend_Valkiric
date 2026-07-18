@@ -57,7 +57,7 @@ export class UsersService {
   }
 
   async updateLockStatus(userId: string, failedAttempts: number, lockedUntil: Date | null): Promise<void> {
-    await this.usersRepository.update(userId, { failedAttempts, lockedUntil });
+    await this.repo.update(userId, { failedAttempts, lockedUntil });
   }
 
   count(): Promise<number> {
