@@ -3,12 +3,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { UserEntity } from './user.entity';
+import { AuditService } from '../audit/audit.service';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(UserEntity)
     private repo: Repository<UserEntity>,
+    private readonly auditService: AuditService,
   ) {}
 
   findAll(): Promise<UserEntity[]> {
@@ -31,6 +33,16 @@ export class UsersService {
   async update(id: string, data: Partial<UserEntity>): Promise<UserEntity> {
     const user = await this.repo.findOne({ where: { id } });
     if (!user) throw new NotFoundException('Usuario no encontrado');
+
+    // --- AUDITORÍA DE EDICIÓN Y ROLES ---
+    if (data.role && data.role !== user.role) {
+      await this.auditService.logAction(user.email, `CAMBIO_ROL_A_${data.role}`, 'IP_NO_REGISTRADA');
+    }
+    if (data.isActive !== undefined && data.isActive !== user.isActive) {
+      const accion = data.isActive ? 'ACTIVACION_CUENTA' : 'DESACTIVACION_CUENTA';
+      await this.auditService.logAction(user.email, accion, 'IP_NO_REGISTRADA');
+    }
+
     Object.assign(user, data);
     return this.repo.save(user);
   }
@@ -38,10 +50,15 @@ export class UsersService {
   async changePassword(id: string, currentPassword: string, newPassword: string): Promise<void> {
     const user = await this.repo.findOne({ where: { id } });
     if (!user) throw new NotFoundException('Usuario no encontrado');
+    
     const valid = await bcrypt.compare(currentPassword, user.password);
     if (!valid) throw new BadRequestException('Contraseña actual incorrecta');
+    
     user.password = await bcrypt.hash(newPassword, 10);
     await this.repo.save(user);
+
+    // --- AUDITORÍA DE CONTRASEÑA ---
+    await this.auditService.logAction(user.email, 'CAMBIO_PASSWORD', 'IP_NO_REGISTRADA');
   }
 
   async setTwoFactorCode(id: string, code: string | null, expires: Date | null): Promise<void> {
@@ -53,7 +70,12 @@ export class UsersService {
   }
 
   async delete(id: string): Promise<void> {
-    await this.repo.delete(id);
+    const user = await this.repo.findOne({ where: { id } });
+    if (user) {
+      // --- AUDITORÍA DE ELIMINACIÓN ---
+      await this.auditService.logAction(user.email, 'ELIMINACION_USUARIO', 'IP_NO_REGISTRADA');
+      await this.repo.delete(id);
+    }
   }
 
   async updateLockStatus(userId: string, failedAttempts: number, lockedUntil: Date | null): Promise<void> {

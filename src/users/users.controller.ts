@@ -6,12 +6,13 @@ import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
+import { ChangePasswordDto } from '../auth/auth.dto';
 
 @Controller('users')
 @UseGuards(JwtAuthGuard)
 @UseInterceptors(ClassSerializerInterceptor)
 export class UsersController {
-  constructor(private usersService: UsersService) {}
+  constructor(private readonly usersService: UsersService) {}
 
   @Get()
   @UseGuards(RolesGuard)
@@ -32,7 +33,7 @@ export class UsersController {
   }
 
   @Patch(':id/password')
-  changePassword(@Param('id') id: string, @Body() body: { currentPassword: string; newPassword: string }) {
+  changePassword(@Param('id') id: string, @Body() body: ChangePasswordDto) {
     return this.usersService.changePassword(id, body.currentPassword, body.newPassword);
   }
 
