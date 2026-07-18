@@ -42,6 +42,12 @@ export class UserEntity {
   @Column({ type: 'timestamp', nullable: true })
   twoFactorExpires: Date;
 
+  @Column({ default: 0 })
+  failedAttempts: number;
+
+  @Column({ type: 'timestamp', nullable: true })
+  lockedUntil: Date;
+
   @CreateDateColumn()
   createdAt: Date;
 

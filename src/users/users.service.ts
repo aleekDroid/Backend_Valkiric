@@ -56,6 +56,10 @@ export class UsersService {
     await this.repo.delete(id);
   }
 
+  async updateLockStatus(userId: string, failedAttempts: number, lockedUntil: Date | null): Promise<void> {
+    await this.usersRepository.update(userId, { failedAttempts, lockedUntil });
+  }
+
   count(): Promise<number> {
     return this.repo.count();
   }
